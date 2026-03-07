@@ -12,8 +12,8 @@ func Serve() {
 	manager.Use(middleware.Logger, middleware.CorsWithPreflight)
 	InitRoutes(mux, manager)
 	fmt.Println("srvr on 3000")
-
-	err := http.ListenAndServe(":3000", mux)
+	wrappedMux := manager.With(mux)
+	err := http.ListenAndServe(":3000", wrappedMux)
 	if err != nil {
 		fmt.Println("failed to start go server!", err)
 	}

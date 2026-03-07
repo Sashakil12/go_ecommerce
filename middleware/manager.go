@@ -23,11 +23,11 @@ func (mngr *Manager) Use(middlewares ...Middleware) {
 }
 func (mngr *Manager) With(handler http.Handler, middlewares ...Middleware) http.Handler {
 	n := handler
-	for _, middleware := range middlewares {
-		n = middleware(n)
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		n = middlewares[i](n)
 	}
-	for _, middleware := range mngr.globalMiddlewares {
-		n = middleware(n)
+	for i := len(mngr.globalMiddlewares) - 1; i >= 0; i-- {
+		n = mngr.globalMiddlewares[i](n)
 	}
 	return n
 
