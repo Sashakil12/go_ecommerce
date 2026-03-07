@@ -26,9 +26,15 @@ func (mngr *Manager) With(handler http.Handler, middlewares ...Middleware) http.
 	for i := len(middlewares) - 1; i >= 0; i-- {
 		n = middlewares[i](n)
 	}
-	for i := len(mngr.globalMiddlewares) - 1; i >= 0; i-- {
-		n = mngr.globalMiddlewares[i](n)
-	}
 	return n
 
+}
+func (mngr *Manager) WrapMux(handler http.Handler) http.Handler {
+	n := handler
+	if len(mngr.globalMiddlewares) > 0 {
+		for i := len(mngr.globalMiddlewares) - 1; i >= 0; i-- {
+			n = mngr.globalMiddlewares[i](n)
+		}
+	}
+	return n
 }
