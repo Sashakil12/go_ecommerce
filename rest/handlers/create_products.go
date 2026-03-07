@@ -15,10 +15,12 @@ func CreateProductsHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&newProduct)
 	if err != nil {
 		fmt.Println("Error parsing json")
-		http.Error(w, "Invalid json", 401)
+		utils.SendError(w, 400, "Invalid json")
+		return
 	}
-	newProduct.Id = len(database.ProductList) + 1
-	database.ProductList = append(database.ProductList, newProduct)
-	utils.SendData(w, database.ProductList, 201)
+	allProducts := database.List()
+	newProduct.Id = len(allProducts) + 1
+	product := database.Store(newProduct)
+	utils.SendData(w, product, 201)
 
 }

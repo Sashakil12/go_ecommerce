@@ -8,8 +8,45 @@ type Product struct {
 	ImgUrl      string  `json:"image_url"`
 }
 
-var ProductList []Product
+var productList []Product
 
+func Store(p Product) *Product {
+	productList = append(productList, p)
+	return &productList[len(productList)-1]
+}
+func List() []Product {
+	// return all product
+	return productList
+}
+func GetById(id int) *Product {
+	for idx, product := range productList {
+		if product.Id == id {
+			return &productList[idx]
+		}
+	}
+	return nil
+}
+func UpdateById(id int, updatedProduct Product) *Product {
+	for idx, product := range productList {
+		if product.Id == id {
+			updatedProduct.Id = id
+			productList[idx] = updatedProduct
+			return &productList[idx]
+		}
+	}
+	return nil
+}
+
+func DeleteById(id int) *Product {
+	for idx, product := range productList {
+		if product.Id == id {
+			deleted := productList[idx]
+			productList = append(productList[:idx], productList[idx+1:]...)
+			return &deleted
+		}
+	}
+	return nil
+}
 func init() {
 	// create 5 random product with valid image url free image is ok
 
@@ -48,9 +85,9 @@ func init() {
 		Price:       15.75,
 		ImgUrl:      "https://images.unsplash.com/photo-1444065381814-865dc9f9e736?auto=format&fit=crop&w=400&q=80",
 	}
-	ProductList = append(ProductList, prod1)
-	ProductList = append(ProductList, prod2)
-	ProductList = append(ProductList, prod3)
-	ProductList = append(ProductList, prod4)
-	ProductList = append(ProductList, prod5)
+	productList = append(productList, prod1)
+	productList = append(productList, prod2)
+	productList = append(productList, prod3)
+	productList = append(productList, prod4)
+	productList = append(productList, prod5)
 }
