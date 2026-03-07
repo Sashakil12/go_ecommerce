@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"ecommerce/handlers"
 	"ecommerce/middleware"
 	"fmt"
 	"net/http"
@@ -10,10 +9,8 @@ import (
 func Serve() {
 	mux := http.NewServeMux()
 	manager := middleware.NewManager()
-	manager.Use(middleware.CorsWithPreflight, middleware.Logger)
-	mux.Handle("GET /products", manager.With(http.HandlerFunc(handlers.GetProductsHandler)))
-	mux.Handle("POST /products", manager.With(http.HandlerFunc(handlers.CreateProductsHandler)))
-	mux.Handle("GET /products/{id}", manager.With(http.HandlerFunc(handlers.GetProductsByIdHandler)))
+	manager.Use(middleware.Logger, middleware.CorsWithPreflight)
+	InitRoutes(mux, manager)
 	fmt.Println("srvr on 3000")
 
 	err := http.ListenAndServe(":3000", mux)
