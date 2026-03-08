@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"ecommerce/config"
 	"ecommerce/database"
 	"ecommerce/utils"
 	"encoding/json"
@@ -20,8 +21,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	user := loginUser.Find(loginUser.Email, loginUser.Password)
 	if user != nil {
-		utils.SendData(w, user, 200)
+		accessToken, err := utils.CreateJwt(config.GetConfig().JwtSecret, utils.Payload{
+			Sub:       user.Id,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		})
+		if err != nil {
+			fmt.Println("Error creating jwt", err)
+			utils.SendError(w, 500, "Error creating access token")
+			return
+		}
+		utils.SendData(w, map[string]string{
+			"access_token": accessToken,
+		}, 200)
 		return
 	}
-	utils.SendError(w, 401, "Unauthorized")
+	utils.SendError(w, 401, "Unauthorized!")
 }
