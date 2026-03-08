@@ -1,8 +1,7 @@
 package user
 
 import (
-	"ecommerce/config"
-	"ecommerce/database"
+	"ecommerce/repo"
 	"ecommerce/utils"
 	"encoding/json"
 	"fmt"
@@ -11,7 +10,7 @@ import (
 
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
-	var loginUser database.User
+	var loginUser repo.User
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&loginUser)
 	if err != nil {
@@ -19,9 +18,9 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, 400, "Invalid json for users")
 		return
 	}
-	user := loginUser.Find(loginUser.Email, loginUser.Password)
+	user := h.userRepo.Get(loginUser.Email, loginUser.Password)
 	if user != nil {
-		accessToken, err := utils.CreateJwt(config.GetConfig().JwtSecret, utils.Payload{
+		accessToken, err := utils.CreateJwt(h.configuration.JwtSecret, utils.Payload{
 			Sub:       user.Id,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,

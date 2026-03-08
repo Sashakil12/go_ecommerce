@@ -57,7 +57,7 @@ var config *Config
 
 func GetConfig() *Config {
 	if config == nil {
-		loadConfig()
+		config = loadConfig()
 	}
 	return config
 }

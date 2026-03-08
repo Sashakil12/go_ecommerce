@@ -1,7 +1,7 @@
 package product
 
 import (
-	"ecommerce/database"
+	"ecommerce/repo"
 	"ecommerce/utils"
 	"encoding/json"
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 func (h *Handler) CreateProductsHandler(w http.ResponseWriter, r *http.Request) {
 
-	var newProduct database.Product
+	var newProduct repo.Product
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&newProduct)
 	if err != nil {
@@ -18,9 +18,18 @@ func (h *Handler) CreateProductsHandler(w http.ResponseWriter, r *http.Request) 
 		utils.SendError(w, 400, "Invalid json")
 		return
 	}
-	allProducts := database.List()
+	allProducts, err := h.productRepo.List()
+	if err != nil {
+		utils.SendError(w, 500, "Internal server error")
+		return
+	}
 	newProduct.Id = len(allProducts) + 1
-	product := database.Store(newProduct)
+	product, err := h.productRepo.Create(newProduct)
+	if err != nil {
+		utils.SendError(w, 500, "Internal server error")
+		return
+	}
+
 	utils.SendData(w, product, 201)
 
 }

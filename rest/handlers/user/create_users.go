@@ -1,7 +1,7 @@
 package user
 
 import (
-	"ecommerce/database"
+	"ecommerce/repo"
 	"ecommerce/utils"
 	"encoding/json"
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 func (h *Handler) CreateUsersHandler(w http.ResponseWriter, r *http.Request) {
 
-	var newUser database.User
+	var newUser repo.User
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&newUser)
 	if err != nil {
@@ -18,9 +18,9 @@ func (h *Handler) CreateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, 400, "Invalid json for users")
 		return
 	}
-	allUsers := database.List()
+	allUsers := h.userRepo.List()
 	newUser.Id = len(allUsers) + 1
-	newUser.Store()
+	h.userRepo.Create(newUser)
 	utils.SendData(w, newUser, 201)
 
 }
