@@ -15,7 +15,7 @@ type Config struct {
 	JwtSecret   string
 }
 
-func loadConfig() Config {
+func loadConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file", err)
@@ -43,18 +43,21 @@ func loadConfig() Config {
 		fmt.Println("JwtSecret is required")
 		os.Exit(1)
 	}
-	cnf := Config{
+	config := &Config{
 		Version:     version,
 		ServiceName: serviceName,
 		HttpPort:    int(httpPortInt),
 		JwtSecret:   JwtSecret,
 	}
-	fmt.Printf("config loaded: %+v\n", cnf)
-	return cnf
+	fmt.Printf("config loaded: %+v\n", config)
+	return config
 }
 
-var config Config = loadConfig()
+var config *Config
 
 func GetConfig() *Config {
-	return &config
+	if config == nil {
+		loadConfig()
+	}
+	return config
 }
