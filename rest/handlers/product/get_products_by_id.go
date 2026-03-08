@@ -1,4 +1,4 @@
-package handlers
+package product
 
 import (
 	"ecommerce/database"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func GetProductsByIdHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetProductsByIdHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
