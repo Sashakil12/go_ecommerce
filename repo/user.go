@@ -1,116 +1,136 @@
 package repo
 
+import (
+	"database/sql"
+	"errors"
+
+	"github.com/jmoiron/sqlx"
+)
+
 type User struct {
-	Id             int    `json:"id"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	IsShopperOwner bool   `json:"is_shop_owner"`
+	Id             int    `json:"id" db:"id"`
+	FirstName      string `json:"first_name" db:"first_name"`
+	LastName       string `json:"last_name" db:"last_name"`
+	Email          string `json:"email" db:"email"`
+	Password       string `json:"password" db:"password"`
+	IsShopperOwner bool   `json:"is_shop_owner" db:"is_shop_owner"`
 }
 
 type userRepo struct {
-	userList []*User
+	db *sqlx.DB
 }
 
 type UserRepo interface {
-	Create(u User) *User
-	Get(email string, password string) *User
-	Update(id int, u User) *User
-	Delete(id int) bool
-	List() []*User
+	Create(u User) (*User, error)
+	Get(email string, password string) (*User, error)
+	Update(id int, u User) (*User, error)
+	Delete(id int) (bool, error)
+	List() ([]*User, error)
 }
 
-func (r *userRepo) Create(u User) *User {
-	r.userList = append(r.userList, &u)
-	return &u
-}
+func (r *userRepo) Create(u User) (*User, error) {
+	query := `
+        INSERT INTO users 
+		(first_name, last_name, email, password, is_shop_owner)
+        VALUES 
+		(:first_name, :last_name, :email, :password, :is_shop_owner)
+        RETURNING id`
 
-func (r *userRepo) Get(email string, password string) *User {
-	for _, user := range r.userList {
-		if user.Email == email && user.Password == password {
-			return user
+	// NamedQuery handles the mapping; we use .Next() to get the returned ID
+	rows, err := r.db.NamedQuery(query, u)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // ALWAYS close your rows!
+
+	var userId int
+	if rows.Next() {
+		if err := rows.Scan(&userId); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	u.Id = userId
+	return &u, nil
 }
 
-func (r *userRepo) Update(id int, u User) *User {
-	for _, user := range r.userList {
-		if user.Id == id {
-			user.FirstName = u.FirstName
-			user.LastName = u.LastName
-			user.Email = u.Email
-			user.Password = u.Password
-			user.IsShopperOwner = u.IsShopperOwner
-			return user
+func (r *userRepo) Get(email string, password string) (*User, error) {
+	var user User
+
+	// sqlx.Get handles the mapping of columns to struct fields automatically
+	query := `SELECT id, first_name, last_name, email, password, is_shop_owner
+	 FROM users 
+	 WHERE email = $1 AND password = $2 LIMIT 1`
+
+	err := r.db.Get(&user, query, email, password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("user not found")
 		}
+		return nil, err
 	}
-	return nil
+
+	return &user, nil
 }
 
-func (r *userRepo) Delete(id int) bool {
-	for i, user := range r.userList {
-		if user.Id == id {
-			r.userList = append(r.userList[:i], r.userList[i+1:]...)
-			return true
-		}
+func (r *userRepo) Update(id int, u User) (*User, error) {
+	// Ensure the ID from the URL/Param matches the struct ID for the query
+	u.Id = id
+
+	query := `
+        UPDATE users 
+        SET first_name = :first_name, 
+            last_name = :last_name, 
+            email = :email, 
+            password = :password, 
+            is_shop_owner = :is_shop_owner
+        WHERE id = :id`
+
+	result, err := r.db.NamedExec(query, u)
+	if err != nil {
+		return nil, err
 	}
-	return false
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, nil // Or return a custom "Not Found" error
+	}
+
+	return &u, nil
+}
+func (r *userRepo) Delete(id int) (bool, error) {
+	query := `DELETE FROM users WHERE id = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	// Returns true if a row was actually deleted, false if the ID didn't exist
+	return rowsAffected > 0, nil
 }
 
-func (r *userRepo) List() []*User {
-	return r.userList
+func (r *userRepo) List() ([]*User, error) {
+	// Create an empty slice to hold the results
+	var users []*User
+
+	// Select maps all rows returned by the query into the users slice
+	query := `SELECT id, first_name, last_name, email, password, is_shop_owner FROM users`
+
+	err := r.db.Select(&users, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
-func NewUserRepo() UserRepo {
+func NewUserRepo(db *sqlx.DB) UserRepo {
 	return &userRepo{
-		userList: []*User{},
+		db: db,
 	}
-}
-
-func generateInitialUsers(r *userRepo) {
-	users := []*User{
-		{
-			Id:             1,
-			FirstName:      "John",
-			LastName:       "Doe",
-			Email:          "user1@yopmail.com",
-			Password:       "password123",
-			IsShopperOwner: false,
-		},
-		{
-			Id:             2,
-			FirstName:      "Jane",
-			LastName:       "Smith",
-			Email:          "user2@yopmail.com",
-			Password:       "password123",
-			IsShopperOwner: true,
-		},
-		{
-			Id:             3,
-			FirstName:      "Alice",
-			LastName:       "Johnson",
-			Email:          "user3@yopmail.com",
-			Password:       "password123",
-			IsShopperOwner: false,
-		},
-		{
-			Id:             4,
-			FirstName:      "Bob",
-			LastName:       "Brown",
-			Email:          "user4@yopmail.com",
-			Password:       "password123",
-			IsShopperOwner: true,
-		},
-		{
-			Id:             5,
-			FirstName:      "Charlie",
-			LastName:       "Davis",
-			Email:          "user5@yopmail.com",
-			Password:       "password123",
-			IsShopperOwner: false,
-		},
-	}
-	r.userList = append(r.userList, users...)
 }

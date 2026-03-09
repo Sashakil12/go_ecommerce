@@ -18,7 +18,12 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, 400, "Invalid json for users")
 		return
 	}
-	user := h.userRepo.Get(loginUser.Email, loginUser.Password)
+	user, err := h.userRepo.Get(loginUser.Email, loginUser.Password)
+	if err != nil {
+		fmt.Println("Error fetching user", err)
+		utils.SendError(w, 500, "Error fetching user")
+		return
+	}
 	if user != nil {
 		accessToken, err := utils.CreateJwt(h.configuration.JwtSecret, utils.Payload{
 			Sub:       user.Id,

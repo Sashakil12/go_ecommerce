@@ -18,9 +18,13 @@ func (h *Handler) CreateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, 400, "Invalid json for users")
 		return
 	}
-	allUsers := h.userRepo.List()
-	newUser.Id = len(allUsers) + 1
-	h.userRepo.Create(newUser)
-	utils.SendData(w, newUser, 201)
+
+	createdUser, err := h.userRepo.Create(newUser)
+	if err != nil {
+		fmt.Println("Error creating user", err)
+		utils.SendError(w, 500, "Error creating user")
+		return
+	}
+	utils.SendData(w, createdUser, 201)
 
 }
