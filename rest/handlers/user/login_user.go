@@ -11,6 +11,7 @@ import (
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var loginUser repo.User
+
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&loginUser)
 	if err != nil {
